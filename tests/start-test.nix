@@ -1,15 +1,16 @@
+let
+  nextcloud_username = "user";
+  nextcloud_password = "pass";
+
+  nextcloud_admin_pass = "ncadminpass";
+
+  ntfy_port = "2567";
+in
 (import ./lib.nix) {
 
   name = "from-nixos";
 
-  nodes = let
-    nextcloud_username = "user";
-    nextcloud_password = "pass";
-
-    nextcloud_admin_pass = "ncadminpass";
-
-    ntfy_port = "2567";
-  in {
+  nodes = {
     # self here is set by using specialArgs in `lib.nix`
     n2n = { self, ... }: {
       imports = [ self.nixosModules.nextcloud2ntfy ];
@@ -27,7 +28,7 @@
       };
     };
 
-    ntfy = { self, ... }: {
+    ntfy = { self, pkgs, ... }: {
       services.ntfy-sh = {
         enable = true;
         settings = {
@@ -37,6 +38,8 @@
           auth-default-access = "allow-all";
         };
       };
+
+      environment.systemPackages = [ pkgs.curl ];
     };
 
     nextcloud = { self, pkgs, config, ... }: {
@@ -59,5 +62,11 @@
     nextcloud.wait_for_unit("multi-user.target")
     ntfy.wait_for_unit("multi-user.target")
     n2n.wait_for_unit("multi-user.target")
+
+    with subtest("Ensure ntfy-sh server is working"):
+        ntfy.succeed("curl -d 'test' http://localhost:${ntfy_port}/test")
+
+    with subtest("Ensure nextcloud-occ is working"):
+        nextcloud.succeed("nextcloud-occ status")
   '';
 }
