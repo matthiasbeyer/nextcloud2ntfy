@@ -4,7 +4,7 @@ let
 
   nextcloud_admin_pass = "ncadminpass";
 
-  ntfy_port = "2567";
+  ntfy_port = 2567;
 in
 (import ./lib.nix) {
 
@@ -12,7 +12,7 @@ in
 
   nodes = {
     # self here is set by using specialArgs in `lib.nix`
-    n2n = { self, ... }: {
+    n2n = { self, pkgs, ... }: {
       imports = [ self.nixosModules.nextcloud2ntfy ];
 
       services.nextcloud2ntfy = {
@@ -26,14 +26,18 @@ in
         inherit nextcloud_username;
         inherit nextcloud_password;
       };
+
+      environment.systemPackages = [ pkgs.curl ];
     };
 
     ntfy = { self, pkgs, ... }: {
+      networking.firewall.allowedTCPPorts = [ ntfy_port ];
+
       services.ntfy-sh = {
         enable = true;
         settings = {
           base-url = "ntfy";
-          listen-http = ":${ntfy_port}";
+          listen-http = ":${toString ntfy_port}";
           behind-proxy = false;
           auth-default-access = "allow-all";
         };
@@ -44,6 +48,7 @@ in
 
     nextcloud = { self, pkgs, config, ... }: {
       networking.firewall.allowedTCPPorts = [ 80 ];
+
       services.nextcloud = {
         enable = true;
         https = false;
@@ -64,7 +69,10 @@ in
     n2n.wait_for_unit("multi-user.target")
 
     with subtest("Ensure ntfy-sh server is working"):
-        ntfy.succeed("curl -d 'test' http://localhost:${ntfy_port}/test")
+        ntfy.succeed("curl -d 'test' http://ntfy:${toString ntfy_port}/test")
+
+    with subtest("Ensure ntfy-sh server is reachable from n2n"):
+        n2n.succeed("curl -d 'test' http://ntfy:${toString ntfy_port}/test")
 
     with subtest("Ensure nextcloud-occ is working"):
         nextcloud.succeed("nextcloud-occ status")
