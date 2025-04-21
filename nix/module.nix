@@ -155,7 +155,7 @@ in {
       rate_limit_sleep_seconds = cfg.rate_limit_sleep_seconds;
     };
   in (lib.mkIf cfg.enable {
-    systemd.services.foundryvtt = {
+    systemd.services.nextcloud2ntfy = {
       description = "nextcloud2ntfy";
 
       after = [ "network-online.target" ];
