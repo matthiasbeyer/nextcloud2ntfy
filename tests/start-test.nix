@@ -37,7 +37,7 @@ in
         enable = true;
         settings = {
           base-url = "ntfy";
-          listen-http = ":${toString ntfy_port}";
+          listen-http = "0.0.0.0:${toString ntfy_port}";
           behind-proxy = false;
           auth-default-access = "allow-all";
         };
