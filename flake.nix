@@ -68,7 +68,7 @@
     in {
       packages.default = nextcloud2ntfy;
 
-      nixosModules.nextcloud2ntfy = { config, pkgs }:
+      nixosModules.nextcloud2ntfy = { config, pkgs, ... }:
       let
         lib = pkgs.lib;
         cfg = config.nextcloud2ntfy;
